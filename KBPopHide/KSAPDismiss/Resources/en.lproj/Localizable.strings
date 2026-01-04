@@ -1,0 +1,84 @@
+/* Navigation */
+"General" = "General";
+"Keyboards" = "Keyboards";
+"About" = "About";
+"Settings..." = "Settings...";
+"KSAP Dismiss Settings" = "KSAP Dismiss Settings";
+
+/* Status */
+"Current Status" = "Current Status";
+"Popup Disabled" = "Popup Disabled";
+"Popup Enabled" = "Popup Enabled";
+"Error" = "Error";
+"Unknown" = "Unknown";
+"Active" = "Active";
+
+/* Actions */
+"Quick Actions" = "Quick Actions";
+"Disable Popup" = "Disable Popup";
+"Enable Popup" = "Enable Popup";
+"Refresh Status" = "Refresh Status";
+"Detect" = "Detect";
+"Quit KSAP Dismiss" = "Quit KSAP Dismiss";
+"OK" = "OK";
+
+/* Descriptions */
+"Block KSA for all keyboards" = "Block KSA for all keyboards";
+"Restore default behavior" = "Restore default behavior";
+"How It Works" = "How It Works";
+"KSAP Dismiss prevents the Keyboard Setup Assistant popup by pre-configuring keyboard types in macOS. When disabled, macOS thinks it already knows your keyboard layout." = "KSAP Dismiss prevents the Keyboard Setup Assistant popup by pre-configuring keyboard types in macOS. When disabled, macOS thinks it already knows your keyboard layout.";
+"Admin password required for changes" = "Admin password required for changes";
+
+/* Keyboards Tab */
+"Configured and detected keyboards" = "Configured and detected keyboards";
+"Configured Keyboards" = "Configured Keyboards";
+"Currently registered in macOS plist" = "Currently registered in macOS plist";
+"Connected Keyboards" = "Connected Keyboards";
+"Detected via USB" = "Detected via USB";
+"No Keyboards Found" = "No Keyboards Found";
+"Click \"Detect\" to scan for connected USB keyboards" = "Click \"Detect\" to scan for connected USB keyboards";
+"Keyboard Type Reference" = "Keyboard Type Reference";
+"Configured in plist" = "Configured in plist";
+
+/* Keyboard Types */
+"US / American layout" = "US / American layout";
+"European layout" = "European layout";
+"Japanese layout" = "Japanese layout";
+
+/* About Tab */
+"Version 1.0.0" = "Version 1.0.0";
+"A lightweight macOS utility to disable the Keyboard Setup Assistant popup that appears when connecting third-party keyboards." = "A lightweight macOS utility to disable the Keyboard Setup Assistant popup that appears when connecting third-party keyboards.";
+"Author" = "Author";
+"Contact" = "Contact";
+"Platform" = "Platform";
+"Architecture" = "Architecture";
+"License" = "License";
+"Made with Swift & SwiftUI" = "Made with Swift & SwiftUI";
+
+/* Language */
+"Language" = "Language";
+"System Default" = "System Default";
+"Changes require app restart" = "Changes require app restart";
+"Restart Required" = "Restart Required";
+"Restart the app to apply the new language." = "Restart the app to apply the new language.";
+"Restart Now" = "Restart Now";
+"Later" = "Later";
+
+/* Keyboard count */
+"1 keyboard configured" = "1 keyboard configured";
+"%lld keyboards configured" = "%lld keyboards configured";
+
+/* Automatic Mode */
+"Automatic Mode" = "Automatic Mode";
+"Auto-suppress new keyboards" = "Auto-suppress new keyboards";
+"Automatically configure keyboards when connected" = "Automatically configure keyboards when connected";
+
+/* Startup */
+"Startup" = "Startup";
+"Start at Login" = "Start at Login";
+"Launch KSAP Dismiss when you log in" = "Launch KSAP Dismiss when you log in";
+
+/* Appearance */
+"Appearance" = "Appearance";
+"Show in Dock" = "Show in Dock";
+"Display app icon in the Dock" = "Display app icon in the Dock";
