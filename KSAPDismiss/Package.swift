@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "KSAPDismiss",
             path: "KSAPDismiss",
-            exclude: ["Info.plist"],
+            exclude: ["Info.plist", "KSAPDismiss.entitlements"],
             resources: [
                 .copy("Resources")
             ]

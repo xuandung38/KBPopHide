@@ -22,13 +22,11 @@ final class XPCClient: ObservableObject {
     func connect() async throws {
         logger.info("Connecting to helper...")
 
-        return try await withCheckedThrowingContinuation { continuation in
-            connectionQueue.async { [weak self] in
-                guard let self = self else {
-                    continuation.resume(throwing: XPCError.connectionFailed)
-                    return
-                }
+        // Capture self strongly before entering async context
+        let client = self
 
+        return try await withCheckedThrowingContinuation { continuation in
+            connectionQueue.async {
                 // Create connection
                 let conn = NSXPCConnection(
                     machServiceName: kHelperBundleID,
@@ -36,18 +34,20 @@ final class XPCClient: ObservableObject {
                 )
                 conn.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
 
-                conn.invalidationHandler = { [weak self] in
+                conn.invalidationHandler = { [weak client] in
+                    guard let client else { return }
                     Task { @MainActor in
-                        self?.logger.warning("XPC connection invalidated")
-                        self?.isConnected = false
-                        self?.connection = nil
+                        client.logger.warning("XPC connection invalidated")
+                        client.isConnected = false
+                        client.connection = nil
                     }
                 }
 
-                conn.interruptionHandler = { [weak self] in
+                conn.interruptionHandler = { [weak client] in
+                    guard let client else { return }
                     Task { @MainActor in
-                        self?.logger.warning("XPC connection interrupted")
-                        self?.isConnected = false
+                        client.logger.warning("XPC connection interrupted")
+                        client.isConnected = false
                     }
                 }
 
@@ -55,23 +55,29 @@ final class XPCClient: ObservableObject {
 
                 // Update connection on main actor
                 Task { @MainActor in
-                    self.connection = conn
+                    client.connection = conn
                 }
 
                 // Verify connection by getting version
                 guard let helper = conn.remoteObjectProxyWithErrorHandler({ error in
-                    self.logger.error("XPC error: \(error.localizedDescription)")
+                    Task { @MainActor in
+                        client.logger.error("XPC error: \(error.localizedDescription)")
+                    }
                     continuation.resume(throwing: XPCError.connectionFailed)
                 }) as? HelperProtocol else {
                     continuation.resume(throwing: XPCError.connectionFailed)
                     return
                 }
 
-                helper.getVersion { [weak self] version in
+                helper.getVersion { [weak client] version in
+                    guard let client else {
+                        continuation.resume()
+                        return
+                    }
                     Task { @MainActor in
-                        self?.helperVersion = version
-                        self?.isConnected = true
-                        self?.logger.info("Connected to helper v\(version)")
+                        client.helperVersion = version
+                        client.isConnected = true
+                        client.logger.info("Connected to helper v\(version)")
                     }
                     continuation.resume()
                 }
