@@ -2,6 +2,21 @@
 
 All notable changes to KSAP Dismiss will be documented in this file.
 
+## [1.1.2] - 2026-01-04
+
+### Fixed
+- **Helper Embedding**: Fixed CFErrorDomainLaunchd error 2 (ENOENT) by properly embedding helper binary in app bundle
+- **Build System**: Added postCompileScript in project.yml to copy helper after build
+
+### Added
+- **Fallback Authorization Mode**: Auto-fallback to admin password prompt when SMJobBless fails (unsigned builds)
+- **DirectPlistWriter**: Fallback class for direct keyboard config writing via Authorization Services
+- **Makefile Targets**: Added `helper` and `embed-helper` targets
+
+### Changed
+- **SecureOperationExecutor**: Gracefully degrades to fallback mode when XPC/SMJobBless unavailable
+- Unsigned development builds now work without Apple Developer certificate
+
 ## [1.1.1] - 2026-01-04
 
 ### Changed
