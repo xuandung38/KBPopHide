@@ -36,10 +36,22 @@ build/
 .env
 *.pem
 *.key
+eddsa_private.key
+
+# Sparkle signing tools (download from releases)
+KSAPDismiss/bin/generate_keys
+KSAPDismiss/bin/sign_update
+KSAPDismiss/bin/generate_appcast
+KSAPDismiss/bin/BinaryDelta
+KSAPDismiss/bin/old_dsa_scripts/
+KSAPDismiss/Symbols/
+KSAPDismiss/sparkle.app/
+KSAPDismiss/Sparkle.framework/
+KSAPDismiss/Sparkle\ Test\ App.app/
+*.tar.xz
 
 # Claude AI config (local only)
 .claude/
 
-# Local docs and plans
-docs/
+# Local plans only (docs/ needed for GitHub Pages)
 plans/
