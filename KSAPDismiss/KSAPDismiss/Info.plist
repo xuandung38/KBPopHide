@@ -19,7 +19,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>1.1.2</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSApplicationCategoryType</key>
@@ -28,30 +28,30 @@
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>KSAP Dismiss needs to run scripts with administrator privileges to modify keyboard settings.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>KSAP Dismiss uses Face ID to authorize keyboard configuration changes.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Xuan Dung, Ho. All rights reserved.</string>
 	<key>NSMainStoryboardFile</key>
 	<string></string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>KSAP Dismiss needs to run scripts with administrator privileges to modify keyboard settings.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>KSAP Dismiss uses Face ID to authorize keyboard configuration changes.</string>
 	<key>SMPrivilegedExecutables</key>
 	<dict>
 		<key>com.hxd.ksapdismiss.helper</key>
 		<string>identifier "com.hxd.ksapdismiss.helper" and anchor apple generic</string>
 	</dict>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 	<key>SUFeedURL</key>
 	<string>https://xuandung38.github.io/ksap-dismiss/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>ErqLZ+Wmkl9y9aUo2TjT8mlLm5KSr/gZPfX5HfU29Jk=</string>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
-	<key>SUAutomaticallyUpdate</key>
-	<false/>
-	<key>SUAllowsAutomaticUpdates</key>
-	<true/>
 </dict>
 </plist>

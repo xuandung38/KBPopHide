@@ -12,7 +12,13 @@ DerivedData/
 .claude/
 CLAUDE.md
 plans/
-docs/
+
+# docs/ - selectively allow documentation and GitHub Pages files
+docs/*
+!docs/*.md
+!docs/appcast.xml
+!docs/index.html
+!docs/.nojekyll
 
 # macOS
 .DS_Store

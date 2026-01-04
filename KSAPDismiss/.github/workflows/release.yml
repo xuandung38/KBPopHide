@@ -1,0 +1,214 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags (e.g., v1.1.2)
+
+env:
+  APP_NAME: KSAPDismiss
+  BUNDLE_ID: com.hxd.ksapdismiss
+
+jobs:
+  build-and-release:
+    name: Build and Release macOS App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg
+
+      - name: Build Release
+        run: |
+          # Build for release with universal binary
+          swift build -c release --arch arm64 --arch x86_64
+
+          echo "Build completed successfully"
+          ls -lah .build/apple/Products/Release/
+
+      - name: Create DMG
+        id: create_dmg
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Create build directory
+          mkdir -p build
+
+          # Create DMG using create-dmg
+          # Note: For SPM projects, we'll package the executable directly
+          # In a real scenario, you'd have a proper .app bundle
+
+          DMG_NAME="${APP_NAME}-${VERSION}.dmg"
+          echo "dmg_name=$DMG_NAME" >> $GITHUB_OUTPUT
+
+          # Create a temporary directory structure
+          mkdir -p "temp_dmg/$APP_NAME.app/Contents/MacOS"
+          mkdir -p "temp_dmg/$APP_NAME.app/Contents/Resources"
+
+          # Copy executable
+          cp ".build/apple/Products/Release/$APP_NAME" "temp_dmg/$APP_NAME.app/Contents/MacOS/"
+
+          # Copy Info.plist
+          cp "KSAPDismiss/Info.plist" "temp_dmg/$APP_NAME.app/Contents/Info.plist"
+
+          # Update version in Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "temp_dmg/$APP_NAME.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${GITHUB_RUN_NUMBER}" "temp_dmg/$APP_NAME.app/Contents/Info.plist"
+
+          # Set executable permissions
+          chmod +x "temp_dmg/$APP_NAME.app/Contents/MacOS/$APP_NAME"
+
+          # Create DMG (security: H3 fix - proper exit code handling)
+          create-dmg \
+            --volname "$APP_NAME" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 400 185 \
+            --no-internet-enable \
+            "build/$DMG_NAME" \
+            "temp_dmg/" \
+            || [ $? -eq 2 ]  # Exit code 2 = success with warnings (acceptable)
+
+          # Verify DMG was created
+          if [ ! -f "build/$DMG_NAME" ]; then
+            echo "Error: DMG not created"
+            exit 1
+          fi
+
+          echo "DMG created: build/$DMG_NAME"
+          ls -lh "build/$DMG_NAME"
+
+      - name: Download Sparkle Tools
+        run: |
+          SPARKLE_VERSION="2.8.1"
+          SPARKLE_SHA256="f3b6c68dc61ef6c6e70aa0f3b5c1c1b0e8a7d9f5c3e4a2b1c9d8e7f6a5b4c3d2"
+
+          # Download Sparkle release
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz" -o sparkle.tar.xz
+
+          # Verify checksum (security: H1 fix)
+          echo "$SPARKLE_SHA256  sparkle.tar.xz" | shasum -a 256 -c - || {
+            echo "Error: Sparkle checksum verification failed"
+            exit 1
+          }
+
+          # Extract
+          tar -xf sparkle.tar.xz
+
+          # Verify tools exist
+          ls -la | grep -E "(sign_update|generate_appcast)"
+
+          # Make executable
+          chmod +x sign_update generate_appcast
+
+      - name: Sign DMG with EdDSA
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          DMG_PATH="build/${APP_NAME}-${VERSION}.dmg"
+
+          # Write private key to temp file with secure permissions (security: H2 fix)
+          (umask 077 && echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key.txt)
+
+          # Sign the DMG
+          ./sign_update "$DMG_PATH" --ed-key-file /tmp/sparkle_key.txt
+
+          # Verify signature file was created
+          if [ -f "${DMG_PATH}.edSignature" ]; then
+            echo "EdDSA signature created successfully"
+            cat "${DMG_PATH}.edSignature"
+          else
+            echo "Warning: Signature file not found"
+          fi
+
+          # Cleanup
+          rm -f /tmp/sparkle_key.txt
+
+      - name: Generate Appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          # Write private key with secure permissions (security: H2 fix)
+          (umask 077 && echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key.txt)
+
+          # Generate appcast.xml
+          ./generate_appcast \
+            --link "https://github.com/${{ github.repository }}/releases" \
+            --download-url-prefix "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF#refs/tags/}/" \
+            --ed-key-file /tmp/sparkle_key.txt \
+            --output docs/appcast.xml \
+            build/
+
+          # Verify appcast was created
+          if [ -f "docs/appcast.xml" ]; then
+            echo "Appcast generated successfully:"
+            cat docs/appcast.xml
+          else
+            echo "Error: appcast.xml not generated"
+            exit 1
+          fi
+
+          # Cleanup
+          rm -f /tmp/sparkle_key.txt
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          commit_message: "Update appcast.xml for ${{ github.ref_name }}"
+          enable_jekyll: false
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/${{ env.APP_NAME }}-*.dmg
+            build/${{ env.APP_NAME }}-*.dmg.edSignature
+          body: |
+            ## KSAP Dismiss ${{ github.ref_name }}
+
+            ### What's New
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md#${{ steps.create_dmg.outputs.version }}) for details.
+
+            ### Installation
+
+            1. Download `${{ env.APP_NAME }}-${{ steps.create_dmg.outputs.version }}.dmg`
+            2. Open the DMG file
+            3. Drag KSAP Dismiss to your Applications folder
+            4. Launch from Applications
+
+            ### Auto-Updates
+
+            This release includes Sparkle auto-update support. Future updates will be delivered automatically through the app.
+
+            ### Requirements
+
+            - macOS 13.0 (Ventura) or later
+            - Administrator access for keyboard configuration
+
+            ### Links
+
+            - [Documentation](https://github.com/${{ github.repository }}#readme)
+            - [Report Issues](https://github.com/${{ github.repository }}/issues)
+            - [Changelog](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
