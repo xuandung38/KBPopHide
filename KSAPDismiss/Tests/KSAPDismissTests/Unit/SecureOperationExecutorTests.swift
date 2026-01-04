@@ -1,5 +1,6 @@
 
 import XCTest
+@testable import KSAPDismiss
 
 final class SecureOperationExecutorTests: XCTestCase {
 

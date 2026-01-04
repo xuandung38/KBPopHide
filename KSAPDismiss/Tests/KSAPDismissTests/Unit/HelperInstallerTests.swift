@@ -1,4 +1,5 @@
 import XCTest
+@testable import KSAPDismiss
 
 final class HelperInstallerTests: XCTestCase {
 

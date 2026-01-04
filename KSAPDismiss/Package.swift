@@ -8,16 +8,26 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "KSAPDismiss", targets: ["KSAPDismiss"])
+        .library(name: "KSAPDismiss", targets: ["KSAPDismiss"]),
+        .executable(name: "KSAPDismissApp", targets: ["KSAPDismissApp"])
     ],
     targets: [
-        .executableTarget(
+        // Library target containing all app code (testable)
+        // Named "KSAPDismiss" to match Xcode module name
+        .target(
             name: "KSAPDismiss",
             path: "KSAPDismiss",
             exclude: ["Info.plist"],
             resources: [
                 .copy("Resources")
             ]
+        ),
+        // Executable target with app entry point
+        .executableTarget(
+            name: "KSAPDismissApp",
+            dependencies: ["KSAPDismiss"],
+            path: "App",
+            sources: ["main.swift"]
         ),
         .testTarget(
             name: "KSAPDismissTests",

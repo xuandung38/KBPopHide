@@ -23,3 +23,5 @@ docs/
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+test_results.log
+repomix-output.xml

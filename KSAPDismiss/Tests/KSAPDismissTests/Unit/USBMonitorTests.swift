@@ -1,5 +1,6 @@
 
 import XCTest
+@testable import KSAPDismiss
 
 /// Tests for USBMonitor protocol behavior via MockUSBMonitor
 /// Tests real-time USB keyboard monitoring functionality

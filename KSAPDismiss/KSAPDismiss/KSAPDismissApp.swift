@@ -1,13 +1,15 @@
 import SwiftUI
 import AppKit
 
+#if !SWIFT_PACKAGE
 @main
-struct KSAPDismissApp: App {
+#endif
+public struct KSAPDismissApp: App {
     @StateObject private var keyboardManager = KeyboardManager()
     @StateObject private var languageManager = LanguageManager.shared
     @StateObject private var appSettings = AppSettings.shared
 
-    init() {
+    public init() {
         // Skip setup in test environment
         guard !Self.isRunningTests else { return }
 
@@ -91,7 +93,7 @@ struct KSAPDismissApp: App {
         app.setActivationPolicy(policy)
     }
 
-    var body: some Scene {
+    public var body: some Scene {
         // Menu Bar only - Settings window managed by SettingsWindowController
         MenuBarExtra {
             MenuBarView()
