@@ -73,3 +73,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.hxd.ksapdismiss.tests
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         SWIFT_VERSION: "5.9"
+
+  KSAPDismissHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Helper
+    settings:
+      base:
+        PRODUCT_NAME: com.hxd.ksapdismiss.helper
+        PRODUCT_BUNDLE_IDENTIFIER: com.hxd.ksapdismiss.helper
+        INFOPLIST_FILE: Helper/Info.plist
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_ALLOWED: NO
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+        SWIFT_VERSION: "5.9"
+        SKIP_INSTALL: YES
+        INSTALL_PATH: /Library/PrivilegedHelperTools
+        GENERATE_INFOPLIST_FILE: NO
