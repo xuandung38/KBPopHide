@@ -8,6 +8,9 @@ struct KSAPDismissApp: App {
     @StateObject private var appSettings = AppSettings.shared
 
     init() {
+        // Skip setup in test environment
+        guard !Self.isRunningTests else { return }
+
         // Check for existing instance and terminate if found
         Self.ensureSingleInstance()
 
@@ -17,6 +20,11 @@ struct KSAPDismissApp: App {
             Self.setupAutomaticMode()
             Self.setupDockVisibilityObserver()
         }
+    }
+
+    /// Check if running in XCTest environment
+    private static var isRunningTests: Bool {
+        NSClassFromString("XCTestCase") != nil
     }
 
     /// Ensures only one instance of the app is running.

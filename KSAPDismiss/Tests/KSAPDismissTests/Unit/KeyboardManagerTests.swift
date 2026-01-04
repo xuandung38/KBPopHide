@@ -1,4 +1,4 @@
-@testable import KSAPDismiss
+
 import XCTest
 
 final class KeyboardManagerTests: XCTestCase {

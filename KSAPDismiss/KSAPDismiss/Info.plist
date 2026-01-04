@@ -36,5 +36,7 @@
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>KSAP Dismiss needs to run scripts with administrator privileges to modify keyboard settings.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>KSAP Dismiss uses Face ID to authorize keyboard configuration changes.</string>
 </dict>
 </plist>

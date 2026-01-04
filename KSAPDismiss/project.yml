@@ -40,10 +40,11 @@ targets:
     settings:
       base:
         PRODUCT_NAME: "KSAP Dismiss"
+        PRODUCT_MODULE_NAME: KSAPDismiss
         PRODUCT_BUNDLE_IDENTIFIER: com.hxd.ksapdismiss
         INFOPLIST_FILE: KSAPDismiss/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_ENTITLEMENTS: ""
+        CODE_SIGN_ENTITLEMENTS: KSAPDismiss/KSAPDismiss.entitlements
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_ALLOWED: NO
@@ -66,13 +67,16 @@ targets:
     platform: macOS
     sources:
       - path: Tests
-    dependencies:
-      - target: KSAPDismiss
+      - path: KSAPDismiss
+        excludes:
+          - "Resources/*"
+          - "KSAPDismissApp.swift"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hxd.ksapdismiss.tests
         MACOSX_DEPLOYMENT_TARGET: "13.0"
         SWIFT_VERSION: "5.9"
+        PRODUCT_MODULE_NAME: KSAPDismissTests
 
   KSAPDismissHelper:
     type: tool

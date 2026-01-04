@@ -1,4 +1,4 @@
-@testable import KSAPDismiss
+
 import XCTest
 
 /// Tests for AuthorizationHelper protocol behavior via MockAuthHelper

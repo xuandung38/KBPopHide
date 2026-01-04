@@ -1,4 +1,4 @@
-@testable import KSAPDismiss
+
 import XCTest
 
 /// Tests for USBMonitor protocol behavior via MockUSBMonitor
