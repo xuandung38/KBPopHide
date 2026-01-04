@@ -139,7 +139,10 @@ When the plist contains keyboard entries, macOS assumes those keyboards have alr
 
 - `KSAPDismissApp.swift`: Main app entry point with MenuBarExtra
 - `KeyboardManager.swift`: Core business logic and state management
-- `AuthorizationHelper.swift`: Secure privilege elevation handling
+- `TouchIDAuthenticator.swift`: Touch ID/Face ID biometric authentication
+- `SecureOperationExecutor.swift`: Combined Touch ID + XPC execution pipeline
+- `XPCClient.swift`: XPC communication with privileged helper
+- `HelperInstaller.swift`: SMJobBless-based helper installation
 - `USBMonitor.swift`: Real-time IOKit USB keyboard monitoring
 - `AppSettings.swift`: Settings management with SMAppService for Login Item
 - `LanguageManager.swift`: Live language switching support

@@ -2,6 +2,43 @@
 
 All notable changes to KSAP Dismiss will be documented in this file.
 
+## [1.1.1] - 2026-01-04
+
+### Changed
+- **Touch ID Authentication**: Replaced AppleScript-based password prompts with native Touch ID/Face ID
+- **Privileged Helper Architecture**: New SMJobBless-based privileged helper tool for secure operations
+- **XPC Communication**: Secure inter-process communication between app and helper
+
+### Added
+- **Touch ID Integration**
+  - `TouchIDAuthenticator` - LAContext wrapper for biometric authentication
+  - `SecureOperationExecutor` - Combined Touch ID + XPC execution pipeline
+  - Fallback to password when biometrics unavailable
+
+- **Privileged Helper Tool**
+  - `HelperInstaller` - SMJobBless-based helper installation
+  - `XPCClient` - XPC communication with retry logic
+  - `HelperProtocol` - Shared protocol for app ↔ helper communication
+
+- **E2E Testing Infrastructure** (23 new tests, 78 total)
+  - `XPCIntegrationTests` - 13 tests for XPC client flows
+  - `SecureOperationExecutorIntegrationTests` - 10 tests for auth+XPC
+  - `MockXPCHelper`, `MockXPCClient`, `MockTouchIDAuthenticator`
+  - `XPCClientProtocol` for dependency injection
+
+- **Package Restructure**
+  - Split into library (KSAPDismiss) + executable (KSAPDismissApp)
+  - Tests work with both `swift test` and Xcode
+  - CI/CD compatible with GitHub Actions
+
+### Removed
+- `AuthorizationHelper.swift` - Legacy AppleScript-based authorization
+- `AuthorizationProtocol.swift` - No longer needed
+
+### Fixed
+- Swift 6 strict concurrency errors in XPCClient closures
+- Proper error handling for Touch ID cancellation (silent, no alert)
+
 ## [1.1.0] - 2026-01-04
 
 ### Changed
