@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Claude skills venv (large, can be recreated)
+.claude/skills/.venv/
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Build artifacts
+KSAPDismiss.app/
+build/
+*.app
+
+# IDE
+.idea/
+*.sublime-*
+
+# Secrets
+.env
+*.pem
+*.key
+
+# Claude AI config (local only)
+.claude/
+
+# Local docs and plans
+docs/
+plans/

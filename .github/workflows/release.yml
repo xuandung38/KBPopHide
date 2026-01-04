@@ -1,0 +1,136 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: KSAPDismiss
+        run: xcodegen generate
+
+      - name: Build app
+        working-directory: KSAPDismiss
+        run: |
+          xcodebuild -project KSAPDismiss.xcodeproj \
+            -scheme KSAPDismiss \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Create app bundle
+        working-directory: KSAPDismiss
+        run: |
+          APP_PATH="build/Build/Products/Release/KSAP Dismiss.app"
+          if [ -d "$APP_PATH" ]; then
+            echo "App built successfully"
+            ls -la "$APP_PATH"
+          else
+            echo "Looking for app..."
+            find build -name "*.app" -type d
+          fi
+
+      - name: Create DMG
+        working-directory: KSAPDismiss
+        run: |
+          APP_PATH="build/Build/Products/Release/KSAP Dismiss.app"
+          DMG_NAME="KSAP-Dismiss-${{ github.ref_name || inputs.version }}.dmg"
+
+          # Create temporary directory for DMG contents
+          mkdir -p dmg_contents
+          cp -R "$APP_PATH" dmg_contents/
+
+          # Create symlink to Applications
+          ln -s /Applications dmg_contents/Applications
+
+          # Create DMG
+          hdiutil create -volname "KSAP Dismiss" \
+            -srcfolder dmg_contents \
+            -ov -format UDZO \
+            "$DMG_NAME"
+
+          echo "DMG created: $DMG_NAME"
+          ls -la "$DMG_NAME"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KSAP-Dismiss-DMG
+          path: KSAPDismiss/*.dmg
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: KSAP-Dismiss-DMG
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting changelog for version: $VERSION"
+
+          # Extract section between current version header and next version header (or end)
+          CHANGELOG=$(awk -v ver="$VERSION" '
+            BEGIN { found=0; content="" }
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]") > 0) found=1
+              next
+            }
+            found { content = content $0 "\n" }
+            END { print content }
+          ' CHANGELOG.md)
+
+          # If no specific version found, use default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="Release $GITHUB_REF_NAME"
+          fi
+
+          # Write to file for multiline support
+          echo "$CHANGELOG" > release_notes.md
+          echo "Release notes extracted successfully"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.dmg"
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

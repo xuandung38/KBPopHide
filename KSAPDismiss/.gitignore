@@ -1,0 +1,25 @@
+# Build
+.build/
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# App bundle (generated)
+*.app
+
+# AI/Claude related
+.claude/
+CLAUDE.md
+plans/
+docs/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout

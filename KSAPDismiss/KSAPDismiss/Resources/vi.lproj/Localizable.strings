@@ -1,0 +1,84 @@
+/* Navigation */
+"General" = "Chung";
+"Keyboards" = "Bàn phím";
+"About" = "Giới thiệu";
+"Settings..." = "Cài đặt...";
+"KSAP Dismiss Settings" = "Cài đặt KSAP Dismiss";
+
+/* Status */
+"Current Status" = "Trạng thái hiện tại";
+"Popup Disabled" = "Đã tắt Popup";
+"Popup Enabled" = "Popup đang bật";
+"Error" = "Lỗi";
+"Unknown" = "Không xác định";
+"Active" = "Đang hoạt động";
+
+/* Actions */
+"Quick Actions" = "Thao tác nhanh";
+"Disable Popup" = "Tắt Popup";
+"Enable Popup" = "Bật Popup";
+"Refresh Status" = "Làm mới trạng thái";
+"Detect" = "Phát hiện";
+"Quit KSAP Dismiss" = "Thoát KSAP Dismiss";
+"OK" = "OK";
+
+/* Descriptions */
+"Block KSA for all keyboards" = "Chặn KSA cho tất cả bàn phím";
+"Restore default behavior" = "Khôi phục mặc định";
+"How It Works" = "Cách hoạt động";
+"KSAP Dismiss prevents the Keyboard Setup Assistant popup by pre-configuring keyboard types in macOS. When disabled, macOS thinks it already knows your keyboard layout." = "KSAP Dismiss ngăn popup Keyboard Setup Assistant bằng cách cấu hình sẵn loại bàn phím trong macOS. Khi tắt, macOS nghĩ rằng đã biết layout bàn phím của bạn.";
+"Admin password required for changes" = "Cần mật khẩu quản trị để thay đổi";
+
+/* Keyboards Tab */
+"Configured and detected keyboards" = "Bàn phím đã cấu hình và phát hiện";
+"Configured Keyboards" = "Bàn phím đã cấu hình";
+"Currently registered in macOS plist" = "Đã đăng ký trong macOS plist";
+"Connected Keyboards" = "Bàn phím đang kết nối";
+"Detected via USB" = "Phát hiện qua USB";
+"No Keyboards Found" = "Không tìm thấy bàn phím";
+"Click \"Detect\" to scan for connected USB keyboards" = "Nhấn \"Phát hiện\" để quét bàn phím USB";
+"Keyboard Type Reference" = "Tham khảo loại bàn phím";
+"Configured in plist" = "Đã cấu hình trong plist";
+
+/* Keyboard Types */
+"US / American layout" = "Bố cục US / Mỹ";
+"European layout" = "Bố cục châu Âu";
+"Japanese layout" = "Bố cục Nhật Bản";
+
+/* About Tab */
+"Version 1.0.0" = "Phiên bản 1.0.0";
+"A lightweight macOS utility to disable the Keyboard Setup Assistant popup that appears when connecting third-party keyboards." = "Tiện ích macOS nhẹ để tắt popup Keyboard Setup Assistant khi kết nối bàn phím bên thứ ba.";
+"Author" = "Tác giả";
+"Contact" = "Liên hệ";
+"Platform" = "Nền tảng";
+"Architecture" = "Kiến trúc";
+"License" = "Giấy phép";
+"Made with Swift & SwiftUI" = "Được tạo bằng Swift & SwiftUI";
+
+/* Language */
+"Language" = "Ngôn ngữ";
+"System Default" = "Mặc định hệ thống";
+"Changes require app restart" = "Thay đổi cần khởi động lại ứng dụng";
+"Restart Required" = "Cần khởi động lại";
+"Restart the app to apply the new language." = "Khởi động lại ứng dụng để áp dụng ngôn ngữ mới.";
+"Restart Now" = "Khởi động lại ngay";
+"Later" = "Để sau";
+
+/* Keyboard count */
+"1 keyboard configured" = "1 bàn phím đã cấu hình";
+"%lld keyboards configured" = "%lld bàn phím đã cấu hình";
+
+/* Automatic Mode */
+"Automatic Mode" = "Chế độ tự động";
+"Auto-suppress new keyboards" = "Tự động chặn bàn phím mới";
+"Automatically configure keyboards when connected" = "Tự động cấu hình bàn phím khi kết nối";
+
+/* Startup */
+"Startup" = "Khởi động";
+"Start at Login" = "Khởi động cùng hệ thống";
+"Launch KSAP Dismiss when you log in" = "Chạy KSAP Dismiss khi bạn đăng nhập";
+
+/* Appearance */
+"Appearance" = "Giao diện";
+"Show in Dock" = "Hiển thị trên Dock";
+"Display app icon in the Dock" = "Hiển thị biểu tượng ứng dụng trên Dock";
