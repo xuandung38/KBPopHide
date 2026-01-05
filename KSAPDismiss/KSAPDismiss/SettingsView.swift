@@ -11,6 +11,7 @@ struct SettingsView: View {
         case general = "General"
         case keyboards = "Keyboards"
         case updates = "Updates"
+        case privacy = "Privacy"
         case about = "About"
 
         var localizedName: String {
@@ -22,6 +23,7 @@ struct SettingsView: View {
             case .general: return "gearshape"
             case .keyboards: return "keyboard"
             case .updates: return "arrow.down.circle"
+            case .privacy: return "hand.raised"
             case .about: return "info.circle"
             }
         }
@@ -50,6 +52,8 @@ struct SettingsView: View {
             case .updates:
                 UpdatesSettingsView()
                     .environmentObject(updaterViewModel)
+            case .privacy:
+                PrivacySettingsView()
             case .about:
                 AboutView()
             }
@@ -457,6 +461,7 @@ struct InfoRow: View {
 
 struct UpdatesSettingsView: View {
     @EnvironmentObject var updaterViewModel: UpdaterViewModel
+    @AppStorage("PreferBetaUpdates") private var preferBeta = false
 
     var body: some View {
         ScrollView {
@@ -480,6 +485,29 @@ struct UpdatesSettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                }
+
+                Divider()
+
+                // Update Channel Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("Update Channel"))
+                        .font(.headline)
+
+                    Picker("", selection: $preferBeta) {
+                        Text(L("Stable releases only")).tag(false)
+                        Text(L("Include beta versions")).tag(true)
+                    }
+                    .pickerStyle(.radioGroup)
+
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.blue)
+                        Text(L("Beta versions include the latest features but may be less stable"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 4)
                 }
 
                 Divider()
@@ -508,5 +536,114 @@ struct UpdatesSettingsView: View {
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Privacy Settings View
+
+struct PrivacySettingsView: View {
+    @AppStorage("EnableAnalytics") private var enableAnalytics = false
+    @State private var showingClearConfirmation = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Analytics Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("Analytics"))
+                        .font(.headline)
+
+                    Toggle(isOn: $enableAnalytics) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L("Enable analytics"))
+                            Text(L("Help improve KSAP Dismiss by sending anonymous usage data"))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .toggleStyle(.switch)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L("What we collect:"))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            Text(L("Update check events (version, channel, success/failure)"))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.caption)
+                            Text(L("NO personal information, NO device identifiers, NO keyboard data"))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+
+                Divider()
+
+                // Data Management Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("Data Management"))
+                        .font(.headline)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(L("Analytics log size"))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(formatBytes(AnalyticsManager.shared.logSize()))
+                                .fontWeight(.medium)
+                        }
+
+                        Button(L("Clear Analytics Data")) {
+                            showingClearConfirmation = true
+                        }
+                        .confirmationDialog(
+                            L("Are you sure you want to clear all analytics data?"),
+                            isPresented: $showingClearConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button(L("Clear Data"), role: .destructive) {
+                                AnalyticsManager.shared.clearLogs()
+                            }
+                            Button(L("Cancel"), role: .cancel) { }
+                        }
+                    }
+                }
+
+                Divider()
+
+                // Privacy Policy Section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L("Privacy Commitment"))
+                        .font(.headline)
+
+                    Text(L("All analytics data is stored locally on your device. We never send data to third-party services or remote servers. You have full control over your data and can disable analytics or clear all data at any time."))
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
     }
 }

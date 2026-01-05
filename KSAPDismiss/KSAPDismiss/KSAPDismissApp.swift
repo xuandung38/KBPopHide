@@ -19,6 +19,11 @@ public struct KSAPDismissApp: App {
 
         // Delay setup to after NSApp is initialized
         DispatchQueue.main.async {
+            // Track app launch for rollback detection
+            Task { @MainActor in
+                RollbackManager.shared.trackLaunch()
+            }
+
             Self.applyDockVisibility()
             Self.setupAutomaticMode()
             Self.setupDockVisibilityObserver()

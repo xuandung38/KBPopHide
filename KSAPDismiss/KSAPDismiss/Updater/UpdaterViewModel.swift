@@ -6,15 +6,16 @@ import Sparkle
 final class UpdaterViewModel: ObservableObject {
 
     private let updaterController: SPUStandardUpdaterController
+    private let delegate = UpdaterDelegate()
 
     @Published var canCheckForUpdates = false
     @Published var automaticallyChecksForUpdates = true
 
     init() {
-        // Initialize updater with default configuration
+        // Initialize updater with delegate for beta channels and analytics
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: delegate,
             userDriverDelegate: nil
         )
 

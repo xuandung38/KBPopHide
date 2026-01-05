@@ -7,10 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-05
+
 ### Added
-- GitHub Actions workflow for automated releases
-- Sparkle auto-update appcast generation
-- EdDSA-signed DMG releases
+- Delta Updates: Binary patch generation for 60-90% bandwidth savings (Phase 4)
+- Beta Channel Support: User-controlled early access to pre-release versions (Phase 4)
+- Auto-Rollback Mechanism: Version launch tracking with manual rollback dialog (Phase 4)
+- Analytics Integration: Privacy-first local JSON logging with opt-in (Phase 4)
+- UpdaterDelegate for advanced Sparkle integration
+- AnalyticsManager for privacy-respecting event tracking
+- RollbackManager for version rollback capability
+- Phase 4 test suite (19 new tests)
+
+### Changed
+- Enhanced SettingsView with Beta Channel and Analytics preference toggles
+- UpdaterViewModel extended for delta updates and rollback support
+- KSAPDismissApp integration with analytics and rollback pipeline
+- GitHub Actions release.yml updated for delta generation (+195 lines)
+
+### Fixed
+- Sparkle integration now supports advanced features pipeline
+- Version launch tracking prevents broken version persistence
 
 ## [1.1.2] - 2026-01-05
 
@@ -83,7 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - English and Vietnamese localization
 - Live language switching
 
-[Unreleased]: https://github.com/xuandung38/ksap-dismiss/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/xuandung38/ksap-dismiss/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/xuandung38/ksap-dismiss/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/xuandung38/ksap-dismiss/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/xuandung38/ksap-dismiss/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/xuandung38/ksap-dismiss/compare/v1.0.0...v1.1.0

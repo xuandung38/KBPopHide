@@ -525,6 +525,176 @@ Maintain two version values:
 
 **Conversion**: v1.1.1 → version 111 (major × 100 + minor × 10 + patch)
 
+## Phase 4: Advanced Features
+
+### Delta Updates
+
+Delta updates reduce bandwidth by 60-90% by distributing only binary patches instead of full releases.
+
+**Implementation**:
+- Sparkle 2.8.1+ automatically generates `.delta` patches
+- GitHub Actions workflow creates delta files during release
+- Appcast.xml lists both full and delta download options
+- User's Sparkle automatically selects most efficient format
+
+**Appcast XML Format** (delta support):
+```xml
+<item>
+  <title>Version 1.2.0</title>
+  <enclosure
+    url="https://github.com/.../releases/download/v1.2.0/KSAPDismiss-1.2.0.dmg"
+    sparkle:edSignature="signature-for-full"
+    length="50000000"
+    type="application/octet-stream"
+  />
+  <!-- Delta patch from 1.1.2 to 1.2.0 -->
+  <enclosure
+    url="https://github.com/.../releases/download/v1.2.0/KSAPDismiss-1.1.2-1.2.0.delta"
+    sparkle:edSignature="signature-for-delta"
+    sparkle:deltaFrom="1.1.2"
+    length="3000000"
+    type="application/octet-stream"
+  />
+</item>
+```
+
+**Benefits**:
+- Faster downloads: 3-5 MB delta vs 50 MB full DMG
+- Reduced bandwidth costs: ~94% savings vs full download
+- Transparent to users: Sparkle handles selection
+- Fallback to full: If delta unavailable, uses full DMG
+
+### Beta Channel Support
+
+Users can opt-in to pre-release versions for early access.
+
+**Implementation**:
+- Settings → Updates tab: "Include Beta Versions" toggle
+- Separate appcast feed: `appcast-beta.xml`
+- Beta versions marked with pre-release flag
+- Version numbering: 1.2.0-beta.1, 1.2.0-rc.1
+
+**Appcast XML Format** (beta support):
+```xml
+<item>
+  <title>Version 1.2.0 Beta 1</title>
+  <sparkle:version>120</sparkle:version>
+  <sparkle:shortVersionString>1.2.0-beta.1</sparkle:shortVersionString>
+  <!-- Mark as pre-release to prefer stable when available -->
+  <sparkle:preReleaseVersionString>1.2.0-beta.1</sparkle:preReleaseVersionString>
+</item>
+```
+
+**Feed Selection**:
+```swift
+// UpdaterViewModel.swift
+var feedURL: URL {
+    if includeBetaVersions {
+        return URL(string: "https://xuandung38.github.io/ksap-dismiss/appcast-beta.xml")!
+    } else {
+        return URL(string: "https://xuandung38.github.io/ksap-dismiss/appcast.xml")!
+    }
+}
+```
+
+### Auto-Rollback Mechanism
+
+Automatic rollback if app crashes shortly after update.
+
+**Implementation**:
+- RollbackManager tracks version launch success
+- If app crashes within 5 minutes of update, triggers rollback
+- Manual rollback available in Settings
+- User prompted to report issue
+
+**Rollback Flow**:
+1. Update installed → app restarts
+2. App launches → RollbackManager starts timer (5 min)
+3. User takes action (e.g., interacts with settings)
+4. Success recorded → timer canceled
+5. On crash within window:
+   - Detect previous version in backup
+   - Show rollback dialog on next launch
+   - User confirms rollback
+   - Restore previous version
+   - Remove broken version
+
+**Settings UI**:
+```
+Updates Tab
+├─ Check for updates automatically [toggle]
+├─ Include Beta Versions [toggle]
+├─ Last update: v1.2.0 (5 days ago)
+└─ Rollback to previous version [button - if available]
+   └─ Previous version: v1.1.2
+```
+
+### Analytics Integration
+
+Privacy-first local JSON logging (opt-in).
+
+**Implementation**:
+- AnalyticsManager logs events to `~/Library/Application Support/ksap-dismiss/analytics.json`
+- No network transmission by default
+- User can opt-in to sending analytics
+- Fully transparent data format
+
+**Tracked Events**:
+- App launch/exit
+- Update check initiated/completed
+- Update installed/failed
+- Settings changed
+- Feature used (keyboard management, etc.)
+
+**Data Privacy**:
+- Local storage only (user machine)
+- No IP address collection
+- No tracking cookies
+- No external services
+- User can delete logs anytime
+- Opt-in for cloud transmission (future)
+
+**Settings UI**:
+```
+Analytics Tab
+├─ Help improve KSAP Dismiss [toggle]
+│  └─ "Send crash reports and usage data"
+├─ Data includes:
+│  ├─ App usage patterns
+│  ├─ Feature usage statistics
+│  ├─ Crash reports
+│  └─ OS and device info
+├─ View collected data [button]
+│  └─ Opens analytics.json in default editor
+└─ Clear all analytics [button]
+```
+
+**JSON Format** (`analytics.json`):
+```json
+{
+  "appVersion": "1.2.0",
+  "firstLaunch": "2026-01-05T10:30:00Z",
+  "events": [
+    {
+      "timestamp": "2026-01-05T10:30:15Z",
+      "event": "app_launched",
+      "metadata": {
+        "osVersion": "14.2",
+        "macModel": "MacBookPro18,1"
+      }
+    },
+    {
+      "timestamp": "2026-01-05T10:35:22Z",
+      "event": "update_check",
+      "metadata": {
+        "automatic": true,
+        "availableVersion": "1.2.1"
+      }
+    }
+  ]
+}
+```
+
 ## Best Practices
 
 1. **Always sign releases**: Never skip EdDSA signing
@@ -535,6 +705,10 @@ Maintain two version values:
 6. **Test updates**: Manual DMG install before release
 7. **Keep keys safe**: Private key in Keychain, GitHub Secret
 8. **Update docs**: Keep release process documented
+9. **Test delta patches**: Verify patches reduce file size
+10. **Manage beta releases**: Keep separate feed for beta versions
+11. **Privacy first**: Never send analytics without consent
+12. **Document rollback**: Ensure users know rollback is available
 
 ## Migration from Older Sparkle
 
