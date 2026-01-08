@@ -41,10 +41,14 @@ final class SecureOperationExecutor {
             try await touchID.authenticateWithFallback(reason: reason)
         }
 
-        // Step 2: Ensure helper installed and XPC connected
-        if !installer.isInstalled {
-            logger.info("Installing helper...")
-            try await installer.install()
+        // Step 2: Ensure helper registered and XPC connected
+        if !installer.isEnabled {
+            logger.info("Registering helper if needed...")
+            let registered = try await installer.registerIfNeeded()
+            if registered && installer.requiresApproval {
+                // User needs to approve in System Settings
+                throw HelperInstallerError.notEnabled
+            }
         }
 
         if !xpc.isConnected {
@@ -108,9 +112,12 @@ final class SecureOperationExecutor {
 
     /// Get keyboard status (no auth required - read-only)
     func getKeyboardStatus() async throws -> (hasEntries: Bool, keyboards: [String]?) {
-        // Ensure helper installed and connected but no auth for read
-        if !installer.isInstalled {
-            try await installer.install()
+        // Ensure helper registered and connected but no auth for read
+        if !installer.isEnabled {
+            let registered = try await installer.registerIfNeeded()
+            if registered && installer.requiresApproval {
+                throw HelperInstallerError.notEnabled
+            }
         }
         if !xpc.isConnected {
             try await xpc.connectWithRetry()
@@ -120,13 +127,16 @@ final class SecureOperationExecutor {
 
     // MARK: - Helper Management
 
-    /// Check if helper is installed
+    /// Check if helper is registered and enabled
     var isHelperInstalled: Bool {
-        installer.isInstalled
+        installer.isEnabled
     }
 
-    /// Install helper explicitly
+    /// Register helper explicitly
     func installHelper() async throws {
-        try await installer.install()
+        let registered = try await installer.registerIfNeeded()
+        if registered && installer.requiresApproval {
+            throw HelperInstallerError.notEnabled
+        }
     }
 }

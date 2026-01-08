@@ -232,8 +232,8 @@ struct GeneralSettingsView: View {
         } catch let error as TouchIDError where !error.shouldShowAlert {
             // User canceled - silently ignore
         } catch let error as HelperInstallerError {
-            if case .userCanceled = error { return }
-            errorMessage = error.errorDescription ?? "Installation failed"
+            if case .notEnabled = error { return }
+            errorMessage = error.errorDescription ?? "Registration failed"
             showingError = true
         } catch {
             errorMessage = error.localizedDescription
@@ -250,8 +250,8 @@ struct GeneralSettingsView: View {
         } catch let error as TouchIDError where !error.shouldShowAlert {
             // User canceled - silently ignore
         } catch let error as HelperInstallerError {
-            if case .userCanceled = error { return }
-            errorMessage = error.errorDescription ?? "Installation failed"
+            if case .notEnabled = error { return }
+            errorMessage = error.errorDescription ?? "Registration failed"
             showingError = true
         } catch {
             errorMessage = error.localizedDescription

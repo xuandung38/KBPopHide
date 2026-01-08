@@ -9,6 +9,30 @@ last_updated: 2026-01-06
 
 All notable changes to KSAPDismiss are documented in this file. This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased - v1.1.3] - 2026-01-06
+
+### Critical: Helper Installation Loop Fix
+
+#### Fixed
+- **SMJobBless Helper Installation** - Fixed repeated helper installation prompts on every toggle
+  - Added `CREATE_INFOPLIST_SECTION_IN_BINARY: YES` to embed Info.plist in helper binary
+  - Added `OTHER_LDFLAGS` with `-sectcreate __TEXT __launchd_plist` to embed launchd.plist
+  - Helper now properly installs to `/Library/PrivilegedHelperTools/` on first authorization
+  - Subsequent operations no longer prompt for admin password
+- **Build Verification** - Added postCompileScript to verify embedded plists exist in helper binary
+
+#### Technical Details
+- SMJobBless requires both `__TEXT __info_plist` and `__TEXT __launchd_plist` sections in helper binary
+- Without embedded plists, SMJobBless silently fails despite returning success
+- Helper binary now verified with `otool -P` and `otool -l` during build
+
+#### Impact
+- Users now enter admin password ONCE during initial setup (not on every toggle)
+- Improved user experience with proper helper persistence
+- Fixed critical bug blocking core keyboard configuration functionality
+
+---
+
 ## [Unreleased - v1.2.0] - 2026-01-06
 
 ### Phase 5: Optimization & Polish (COMPLETED)

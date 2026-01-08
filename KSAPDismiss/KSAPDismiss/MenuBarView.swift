@@ -252,11 +252,12 @@ struct MenuBarView: View {
 
         // Check for helper installation errors
         if let installerError = error as? HelperInstallerError {
-            if case .userCanceled = installerError { return }
+            // notEnabled means user needs to approve in System Settings - don't show error
+            if case .notEnabled = installerError { return }
             if let description = installerError.errorDescription {
                 errorMessage = description
             } else {
-                errorMessage = "Installation failed"
+                errorMessage = "Registration failed"
             }
             showingError = true
             return

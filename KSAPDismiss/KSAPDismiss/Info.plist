@@ -38,11 +38,6 @@
 	<string></string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>SMPrivilegedExecutables</key>
-	<dict>
-		<key>com.hxd.ksapdismiss.helper</key>
-		<string>identifier "com.hxd.ksapdismiss.helper" and anchor apple generic</string>
-	</dict>
 	<key>SUAllowsAutomaticUpdates</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>

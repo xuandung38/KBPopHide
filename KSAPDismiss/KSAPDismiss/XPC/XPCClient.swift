@@ -161,9 +161,9 @@ final class XPCClient: ObservableObject {
 
 extension XPCClient {
 
-    /// Check if helper is installed
+    /// Check if helper is registered and enabled
     var isHelperAvailable: Bool {
-        HelperInstaller.shared.isInstalled
+        HelperInstaller.shared.isEnabled
     }
 
     /// Check helper version compatibility
@@ -172,17 +172,20 @@ extension XPCClient {
         return version == kHelperVersion
     }
 
-    /// Ensure helper is installed before connecting
-    func ensureHelperInstalled() async throws {
+    /// Ensure helper is registered before connecting
+    func ensureHelperRegistered() async throws {
         let installer = HelperInstaller.shared
-        if !installer.isInstalled || installer.needsUpdate {
-            try await installer.install()
+        if !installer.isEnabled {
+            let registered = try await installer.registerIfNeeded()
+            if registered && installer.requiresApproval {
+                throw XPCError.helperNotInstalled
+            }
         }
     }
 
-    /// Connect with auto-install if needed
-    func connectWithAutoInstall() async throws {
-        try await ensureHelperInstalled()
+    /// Connect with auto-register if needed
+    func connectWithAutoRegister() async throws {
+        try await ensureHelperRegistered()
         try await connect()
     }
 }

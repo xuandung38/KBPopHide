@@ -66,7 +66,8 @@ final class TouchIDAuthenticator: ObservableObject {
             error: &error
         ) else {
             logger.error("Biometric not available: \(error?.localizedDescription ?? "unknown")")
-            throw TouchIDError.notAvailable(error?.localizedDescription)
+            // Handle NSError from canEvaluatePolicy (different from LAError)
+            throw mapCanEvaluatePolicyError(error)
         }
 
         // Evaluate biometric
@@ -100,7 +101,7 @@ final class TouchIDAuthenticator: ObservableObject {
             error: &error
         ) else {
             logger.error("Device auth not available: \(error?.localizedDescription ?? "unknown")")
-            throw TouchIDError.notAvailable(error?.localizedDescription)
+            throw mapCanEvaluatePolicyError(error)
         }
 
         do {
@@ -121,21 +122,78 @@ final class TouchIDAuthenticator: ObservableObject {
 
     // MARK: - Private
 
-    private func mapLAError(_ error: LAError) -> TouchIDError {
-        switch error.code {
-        case .userCancel:
-            return .userCanceled
-        case .userFallback:
-            return .userFallback
+    /// Map NSError from canEvaluatePolicy to TouchIDError
+    private func mapCanEvaluatePolicyError(_ error: NSError?) -> TouchIDError {
+        guard let error = error else {
+            return .notAvailable("Biometric authentication not available")
+        }
+
+        let laErrorCode = LAError.Code(rawValue: error.code)
+
+        switch laErrorCode {
         case .biometryNotAvailable:
             return .notAvailable("Biometric hardware not available")
         case .biometryNotEnrolled:
             return .notEnrolled
+        case .biometryNotPaired:
+            // "Biometric accessory is not paired" - e.g., external Touch ID keyboard
+            return .notPaired
+        case .passcodeNotSet:
+            return .passcodeNotSet
         case .biometryLockout:
             return .lockout
+        default:
+            // Unknown error from canEvaluatePolicy
+            return .notAvailable(error.localizedDescription)
+        }
+    }
+
+    /// Map LAError from evaluatePolicy to TouchIDError
+    private func mapLAError(_ error: LAError) -> TouchIDError {
+        switch error.code {
+        case .userCancel:
+            return .userCanceled
+
+        case .userFallback:
+            return .userFallback
+
+        case .biometryNotAvailable:
+            return .notAvailable("Biometric hardware not available")
+
+        case .biometryNotEnrolled:
+            return .notEnrolled
+
+        case .biometryNotPaired:
+            // External biometric device not connected
+            return .notPaired
+
+        case .biometryLockout:
+            return .lockout
+
         case .authenticationFailed:
             return .failed
-        default:
+
+        case .appCancel:
+            // App invalidated context during evaluation
+            return .appCanceled
+
+        case .invalidContext:
+            // Context configuration error (developer error)
+            return .invalidContext
+
+        case .notInteractive:
+            // UI required but not allowed (e.g., background)
+            return .notInteractive
+
+        case .passcodeNotSet:
+            // Device has no passcode set
+            return .passcodeNotSet
+
+        case .systemCancel:
+            // System interrupted authentication
+            return .systemCanceled
+
+        @unknown default:
             return .unknown(error.localizedDescription)
         }
     }
@@ -146,26 +204,56 @@ final class TouchIDAuthenticator: ObservableObject {
 enum TouchIDError: LocalizedError {
     case notAvailable(String?)
     case notEnrolled
+    case notPaired
     case lockout
+    case passcodeNotSet
     case userCanceled
     case userFallback
     case failed
+    case appCanceled
+    case systemCanceled
+    case invalidContext
+    case notInteractive
     case unknown(String)
 
     var errorDescription: String? {
         switch self {
         case .notAvailable(let reason):
             return reason ?? "Biometric authentication not available"
+
         case .notEnrolled:
             return "No biometric data enrolled. Please set up Touch ID in System Settings."
+
+        case .notPaired:
+            return "Biometric accessory is not paired. Please connect your Touch ID keyboard or enable Touch ID."
+
         case .lockout:
             return "Biometric locked. Please use password to unlock."
+
+        case .passcodeNotSet:
+            return "Device passcode not set. Please set up a passcode in System Settings."
+
         case .userCanceled:
             return nil  // Silent - user chose to cancel
+
         case .userFallback:
             return nil  // User wants password
+
         case .failed:
-            return "Authentication failed"
+            return "Authentication failed. Please try again."
+
+        case .appCanceled:
+            return "Authentication was canceled by the app. Please try again."
+
+        case .systemCanceled:
+            return "Authentication was interrupted by the system. Please try again."
+
+        case .invalidContext:
+            return "Authentication context error. Please restart the app."
+
+        case .notInteractive:
+            return "Authentication requires user interaction but is not available in current context."
+
         case .unknown(let msg):
             return msg
         }
@@ -174,7 +262,7 @@ enum TouchIDError: LocalizedError {
     /// Whether to show password fallback
     var shouldFallbackToPassword: Bool {
         switch self {
-        case .userFallback, .lockout, .notEnrolled:
+        case .userFallback, .lockout, .notEnrolled, .notPaired, .passcodeNotSet:
             return true
         default:
             return false

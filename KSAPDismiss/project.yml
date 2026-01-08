@@ -56,9 +56,25 @@ targets:
           HELPER_PATH="${BUILT_PRODUCTS_DIR}/com.hxd.ksapdismiss.helper"
           if [ -f "$HELPER_PATH" ]; then
             cp "$HELPER_PATH" "$HELPER_DIR/"
-            echo "Helper embedded at: $HELPER_DIR/com.hxd.ksapdismiss.helper"
+            echo "✓ Helper embedded at: $HELPER_DIR/com.hxd.ksapdismiss.helper"
           else
-            echo "warning: Helper not found at $HELPER_PATH"
+            echo "✗ warning: Helper not found at $HELPER_PATH"
+          fi
+        basedOnDependencyAnalysis: false
+      - name: Copy Daemon Plist for SMAppService
+        script: |
+          # Create LaunchDaemons directory
+          PLIST_DIR="${TARGET_BUILD_DIR}/${WRAPPER_NAME}/Contents/Library/LaunchDaemons"
+          mkdir -p "$PLIST_DIR"
+
+          # Copy daemon plist
+          PLIST_SRC="${SRCROOT}/Helper/com.hxd.ksapdismiss.helper.plist"
+          if [ -f "$PLIST_SRC" ]; then
+            cp "$PLIST_SRC" "$PLIST_DIR/"
+            echo "✓ Daemon plist copied to: $PLIST_DIR/"
+          else
+            echo "✗ ERROR: Daemon plist not found at $PLIST_SRC"
+            exit 1
           fi
         basedOnDependencyAnalysis: false
     settings:
@@ -123,3 +139,23 @@ targets:
         SKIP_INSTALL: YES
         INSTALL_PATH: /Library/PrivilegedHelperTools
         GENERATE_INFOPLIST_FILE: NO
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+    postCompileScripts:
+      - name: Verify Helper Binary
+        script: |
+          HELPER="${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}"
+          echo "✓ Verifying helper binary for SMAppService..."
+
+          # Check Info.plist section (still required for helper identification)
+          if otool -P "${HELPER}" 2>/dev/null | grep -q CFBundleIdentifier; then
+            echo "  ✓ Info.plist section found"
+          else
+            echo "  ✗ ERROR: __info_plist section missing - helper identification will fail"
+            exit 1
+          fi
+
+          # Note: SMAppService uses external daemon plist (not embedded in binary)
+          # Daemon plist is copied to app bundle by "Copy Daemon Plist" build phase
+
+          echo "✓ Helper binary verification passed"
+        basedOnDependencyAnalysis: false

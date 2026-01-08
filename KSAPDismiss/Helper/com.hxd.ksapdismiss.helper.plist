@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.hxd.ksapdismiss.helper</string>
+
+	<key>BundleProgram</key>
+	<string>Contents/Library/LaunchServices/com.hxd.ksapdismiss.helper</string>
+
+	<key>MachServices</key>
+	<dict>
+		<key>com.hxd.ksapdismiss.helper</key>
+		<true/>
+	</dict>
+
+	<key>LaunchOnlyOnce</key>
+	<false/>
+</dict>
+</plist>

@@ -10,11 +10,5 @@
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
-    <key>SMAuthorizedClients</key>
-    <array>
-        <!-- Main app's code signing requirement -->
-        <!-- Update with actual Team ID in production -->
-        <string>identifier "com.hxd.ksapdismiss" and anchor apple generic</string>
-    </array>
 </dict>
 </plist>

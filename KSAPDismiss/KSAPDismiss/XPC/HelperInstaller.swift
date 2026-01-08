@@ -1,195 +1,201 @@
 import Foundation
 import ServiceManagement
-import Security
+import AppKit
 import os.log
 
-/// Handles privileged helper installation via SMJobBless
+/// Handles privileged helper registration via SMAppService (macOS 13.0+)
 @MainActor
 final class HelperInstaller: ObservableObject {
 
     static let shared = HelperInstaller()
 
-    @Published private(set) var isInstalled = false
-    @Published private(set) var installedVersion: String?
-    @Published private(set) var isInstalling = false
+    @Published private(set) var isRegistered = false
+    @Published private(set) var requiresApproval = false
+    @Published private(set) var isRegistering = false
 
     private let helperBundleID = kHelperBundleID
-    private let helperPath = "/Library/PrivilegedHelperTools/\(kHelperBundleID)"
+    private let daemonPlistName = "com.hxd.ksapdismiss.helper.plist"
     private let logger = Logger(subsystem: "com.hxd.ksapdismiss", category: "HelperInstaller")
 
+    // SMAppService instance
+    private lazy var service: SMAppService = {
+        SMAppService.daemon(plistName: daemonPlistName)
+    }()
+
     private init() {
-        checkInstallationStatus()
+        checkRegistrationStatus()
     }
 
-    // MARK: - Installation Status
+    // MARK: - Registration Status
 
-    /// Check if helper is installed
-    func checkInstallationStatus() {
-        isInstalled = FileManager.default.fileExists(atPath: helperPath)
-        if isInstalled {
-            installedVersion = getInstalledVersion()
-            logger.info("Helper installed: v\(self.installedVersion ?? "unknown")")
-        } else {
-            installedVersion = nil
-            logger.info("Helper not installed")
-        }
-    }
+    /// Check if helper is registered and approved
+    func checkRegistrationStatus() {
+        let status = service.status
 
-    /// Get version of installed helper
-    private func getInstalledVersion() -> String? {
-        // Read version from helper's Info.plist embedded in binary
-        // For now, attempt XPC version check
-        return nil
-    }
+        switch status {
+        case .notRegistered:
+            isRegistered = false
+            requiresApproval = false
+            logger.info("Helper not registered")
 
-    /// Check if update is needed
-    var needsUpdate: Bool {
-        guard isInstalled, let installed = installedVersion else {
-            return !isInstalled
-        }
-        return installed != kHelperVersion
-    }
+        case .enabled:
+            isRegistered = true
+            requiresApproval = false
+            logger.info("Helper registered and enabled")
 
-    // MARK: - Installation
+        case .requiresApproval:
+            isRegistered = true
+            requiresApproval = true
+            logger.info("Helper registered but requires user approval")
 
-    /// Install or update the helper
-    func install() async throws {
-        guard !isInstalling else {
-            throw HelperInstallerError.alreadyInstalling
-        }
+        case .notFound:
+            isRegistered = false
+            requiresApproval = false
+            logger.error("Helper daemon plist not found in bundle")
 
-        isInstalling = true
-        defer { isInstalling = false }
-
-        logger.info("Starting helper installation...")
-
-        // Create authorization reference
-        var authRef: AuthorizationRef?
-        var status = AuthorizationCreate(nil, nil, [], &authRef)
-
-        guard status == errAuthorizationSuccess, let auth = authRef else {
-            logger.error("Failed to create authorization: \(status)")
-            throw HelperInstallerError.authorizationFailed
-        }
-
-        defer { AuthorizationFree(auth, []) }
-
-        // Request authorization with user interaction
-        var item = kSMRightBlessPrivilegedHelper.withCString { cString in
-            AuthorizationItem(
-                name: cString,
-                valueLength: 0,
-                value: nil,
-                flags: 0
-            )
-        }
-
-        var rights = withUnsafeMutablePointer(to: &item) { itemPtr in
-            AuthorizationRights(count: 1, items: itemPtr)
-        }
-
-        status = AuthorizationCopyRights(
-            auth,
-            &rights,
-            nil,
-            [.interactionAllowed, .extendRights, .preAuthorize],
-            nil
-        )
-
-        guard status == errAuthorizationSuccess else {
-            if status == errAuthorizationCanceled {
-                logger.info("User canceled authorization")
-                throw HelperInstallerError.userCanceled
-            }
-            logger.error("Authorization failed: \(status)")
-            throw HelperInstallerError.authorizationDenied
-        }
-
-        // Bless the helper
-        var cfError: Unmanaged<CFError>?
-
-        let success = SMJobBless(
-            kSMDomainSystemLaunchd,
-            helperBundleID as CFString,
-            auth,
-            &cfError
-        )
-
-        if success {
-            logger.info("Helper installed successfully")
-            checkInstallationStatus()
-        } else {
-            let error = cfError?.takeRetainedValue()
-            let description = error.map { CFErrorCopyDescription($0) as String? } ?? nil
-            logger.error("SMJobBless failed: \(description ?? "unknown")")
-            throw HelperInstallerError.blessFailed(description)
+        @unknown default:
+            isRegistered = false
+            requiresApproval = false
+            logger.warning("Unknown helper status: \(status.rawValue)")
         }
     }
 
-    /// Uninstall the helper
-    func uninstall() async throws {
-        guard isInstalled else { return }
+    /// Check if helper is ready to use
+    var isEnabled: Bool {
+        service.status == .enabled
+    }
 
-        logger.info("Uninstalling helper...")
+    /// Check if registration is needed
+    var needsRegistration: Bool {
+        service.status == .notRegistered
+    }
 
-        // Remove helper binary
+    // MARK: - Registration
+
+    /// Register the helper (first-time setup)
+    func register() async throws {
+        guard !isRegistering else {
+            throw HelperInstallerError.alreadyRegistering
+        }
+
+        isRegistering = true
+        defer { isRegistering = false }
+
+        logger.info("Registering helper with SMAppService...")
+
         do {
-            try FileManager.default.removeItem(atPath: helperPath)
-        } catch {
-            logger.error("Failed to remove helper: \(error.localizedDescription)")
-            throw HelperInstallerError.uninstallFailed(error.localizedDescription)
-        }
+            try service.register()
+            logger.info("Helper registered successfully")
+            checkRegistrationStatus()
 
-        // Remove launchd plist
-        let plistPath = "/Library/LaunchDaemons/\(helperBundleID).plist"
-        if FileManager.default.fileExists(atPath: plistPath) {
-            do {
-                try FileManager.default.removeItem(atPath: plistPath)
-            } catch {
-                logger.warning("Failed to remove launchd plist: \(error.localizedDescription)")
+            // Show approval UI if needed
+            if requiresApproval {
+                showApprovalRequiredDialog()
             }
+        } catch {
+            logger.error("Helper registration failed: \(error.localizedDescription)")
+            throw HelperInstallerError.registrationFailed(error.localizedDescription)
         }
+    }
 
-        checkInstallationStatus()
-        logger.info("Helper uninstalled")
+    /// Unregister the helper
+    func unregister() async throws {
+        logger.info("Unregistering helper...")
+
+        do {
+            try await service.unregister()
+            logger.info("Helper unregistered successfully")
+            checkRegistrationStatus()
+        } catch {
+            logger.error("Helper unregistration failed: \(error.localizedDescription)")
+            throw HelperInstallerError.unregistrationFailed(error.localizedDescription)
+        }
     }
 
     // MARK: - Convenience
 
-    /// Install if needed, return true if installation occurred
-    func installIfNeeded() async throws -> Bool {
-        if isInstalled && !needsUpdate {
+    /// Register if needed, return true if registration occurred
+    func registerIfNeeded() async throws -> Bool {
+        if isEnabled {
             return false
         }
-        try await install()
-        return true
+
+        if needsRegistration {
+            try await register()
+            return true
+        }
+
+        if requiresApproval {
+            showApprovalRequiredDialog()
+            return false
+        }
+
+        return false
+    }
+
+    // MARK: - User Guidance
+
+    /// Show dialog guiding user to approve helper in System Settings
+    private func showApprovalRequiredDialog() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Background Service Required", comment: "")
+        alert.informativeText = NSLocalizedString(
+            "KSAP Dismiss needs permission to run a background service for managing keyboard settings.\n\n" +
+            "Please enable it in System Settings:\n" +
+            "General → Login Items → KSAP Dismiss → Allow in the Background",
+            comment: ""
+        )
+        alert.addButton(withTitle: NSLocalizedString("Open System Settings", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Remind Me Later", comment: ""))
+        alert.alertStyle = .informational
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            openSystemSettingsLoginItems()
+        }
+    }
+
+    /// Open System Settings to Login Items page
+    private func openSystemSettingsLoginItems() {
+        // macOS 13.0+ System Settings URL
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        } else {
+            // Fallback: Open Login Items preference pane
+            let url = URL(fileURLWithPath: "/System/Library/PreferencePanes/LoginItems.prefPane")
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Show error alert
+    func showErrorAlert(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Error", comment: "")
+        alert.informativeText = message
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+        alert.alertStyle = .critical
+        alert.runModal()
     }
 }
 
 // MARK: - Errors
 
 enum HelperInstallerError: LocalizedError {
-    case alreadyInstalling
-    case authorizationFailed
-    case authorizationDenied
-    case userCanceled
-    case blessFailed(String?)
-    case uninstallFailed(String)
+    case alreadyRegistering
+    case registrationFailed(String)
+    case unregistrationFailed(String)
+    case notEnabled
 
     var errorDescription: String? {
         switch self {
-        case .alreadyInstalling:
-            return "Installation already in progress"
-        case .authorizationFailed:
-            return "Failed to create authorization"
-        case .authorizationDenied:
-            return "Authorization denied. Administrator access required."
-        case .userCanceled:
-            return "Installation canceled"
-        case .blessFailed(let msg):
-            return "Helper installation failed: \(msg ?? "unknown error")"
-        case .uninstallFailed(let msg):
-            return "Helper uninstall failed: \(msg)"
+        case .alreadyRegistering:
+            return "Registration already in progress"
+        case .registrationFailed(let msg):
+            return "Helper registration failed: \(msg)"
+        case .unregistrationFailed(let msg):
+            return "Helper unregistration failed: \(msg)"
+        case .notEnabled:
+            return "Helper is not enabled. Please approve in System Settings."
         }
     }
 }

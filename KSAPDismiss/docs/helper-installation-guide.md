@@ -164,6 +164,82 @@ KSAPDismiss:
 - Links entitlements file
 - Sets bundle identifier
 
+### 5. Plist Embedding Requirements (Critical)
+
+SMJobBless requires embedded plists in the helper binary. These build settings are **MANDATORY**:
+
+**File**: `project.yml` → `KSAPDismissHelper` target settings
+
+```yaml
+settings:
+  base:
+    CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+    OTHER_LDFLAGS: -sectcreate __TEXT __launchd_plist $(SRCROOT)/Helper/launchd.plist
+```
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| `CREATE_INFOPLIST_SECTION_IN_BINARY` | `YES` | Embeds Info.plist into `__TEXT __info_plist` section |
+| `OTHER_LDFLAGS` | `-sectcreate __TEXT __launchd_plist $(SRCROOT)/Helper/launchd.plist` | Embeds launchd.plist into `__TEXT __launchd_plist` section |
+
+#### Why These Settings Are Critical
+
+1. **SMJobBless Validation**: SMJobBless reads embedded plists from helper binary to:
+   - Verify helper identity and version (`CFBundleIdentifier`, `CFBundleVersion`)
+   - Extract launchd configuration for service registration
+   - Validate code signature requirements
+
+2. **Silent Failure Without Embedding**: If plists are not embedded:
+   - `SMJobBless()` may return success without error
+   - Helper never installs to `/Library/PrivilegedHelperTools/`
+   - Helper never registers with launchd
+   - Subsequent operations trigger repeated installation prompts
+
+#### Verification
+
+Check if plists are properly embedded after building:
+
+```bash
+# Check Info.plist section
+otool -P /path/to/com.hxd.ksapdismiss.helper | grep CFBundleIdentifier
+
+# Check launchd.plist section
+otool -l /path/to/com.hxd.ksapdismiss.helper | grep "__launchd_plist"
+```
+
+Expected output:
+- `otool -P` shows valid XML plist with `CFBundleIdentifier`
+- `otool -l` shows `sectname __launchd_plist`
+
+#### Build Verification Script
+
+Added to `project.yml` as postCompileScript for KSAPDismissHelper:
+
+```yaml
+postCompileScripts:
+  - name: Verify Embedded Plists
+    script: |
+      HELPER="${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}"
+
+      # Check Info.plist section
+      if otool -P "${HELPER}" 2>/dev/null | grep -q CFBundleIdentifier; then
+        echo "✓ __info_plist section found"
+      else
+        echo "✗ ERROR: __info_plist section missing"
+        exit 1
+      fi
+
+      # Check launchd.plist section
+      if otool -l "${HELPER}" 2>/dev/null | grep -q "__launchd_plist"; then
+        echo "✓ __launchd_plist section found"
+      else
+        echo "✗ ERROR: __launchd_plist section missing"
+        exit 1
+      fi
+```
+
+This script fails the build if embedded plists are missing, preventing shipping a broken helper.
+
 ## API Reference
 
 ### HelperInstaller Class
